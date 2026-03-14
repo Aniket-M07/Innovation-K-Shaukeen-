@@ -81,4 +81,4 @@ The app runs at:
 
 - User database is created automatically at `backend/users.db`.
 - Uploaded files are stored in `backend/uploads/`.
-- For production, set a strong `SECRET_KEY` environment variable.
+
