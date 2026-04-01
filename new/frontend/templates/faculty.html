@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Faculty Directory - Intelligent Campus Search Engine</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+    {% include '_navbar.html' %}
+
+    <div class="container">
+        <section class="card">
+            <h2>👩‍🏫 Faculty Finder</h2>
+            <form method="get" action="/faculty" class="faculty-search">
+                <input type="text" name="q" placeholder="Search faculty name, department, cabin" value="{{ query }}" />
+                <button type="submit">Search</button>
+            </form>
+
+            <div class="faculty-grid">
+                {% for f in faculty %}
+                <div class="faculty-card">
+                    <h3>{{ f.name }}</h3>
+                    <p><strong>Dept:</strong> {{ f.department }}</p>
+                    <p><strong>Cabin:</strong> {{ f.cabin }}</p>
+                    <p><strong>Status:</strong> {{ f.availability }}</p>
+                    <form method="post" action="/bookmark">
+                        <input type="hidden" name="title" value="{{ f.name }}" />
+                        <input type="hidden" name="type" value="faculty" />
+                        <button type="submit">Toggle Bookmark</button>
+                    </form>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+    </div>
+</body>
+
+</html>
