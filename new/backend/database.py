@@ -46,16 +46,26 @@ def init_db():
 			email TEXT NOT NULL UNIQUE,
 			password TEXT NOT NULL,
 			role TEXT NOT NULL DEFAULT 'Student',
+			phone TEXT DEFAULT '',
+			department TEXT DEFAULT '',
+			course TEXT DEFAULT '',
+			programme TEXT DEFAULT '',
 			created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 		)
 	""")
+	# 1. Ensure legacy databases have fields when not present
+	for col in ["phone", "department", "course", "programme"]:
+		try:
+			cursor.execute(f"ALTER TABLE users ADD COLUMN {col} TEXT DEFAULT ''")
+		except Exception:
+			pass
 	
 	conn.commit()
 	conn.close()
 	print(f"✓ Database initialized at {DB_PATH}")
 
 
-def add_user(name, email, password, role="Student"):
+def add_user(name, email, password, role="Student", phone="", department="", course="", programme=""):
 	"""
 	Add a new user to the database
 	
@@ -80,10 +90,10 @@ def add_user(name, email, password, role="Student"):
 		# Insert new user
 		cursor.execute(
 			"""
-			INSERT INTO users (name, email, password, role)
-			VALUES (?, ?, ?, ?)
+			INSERT INTO users (name, email, password, role, phone, department, course, programme)
+			VALUES (?, ?, ?, ?, ?, ?, ?, ?)
 			""",
-			(name, email, password, role)
+			(name, email, password, role, phone, department, course, programme)
 		)
 		
 		conn.commit()
@@ -248,6 +258,45 @@ def delete_user(email):
 		return False, f"Database error: {str(e)}"
 	except Exception as e:
 		return False, f"Error: {str(e)}"
+
+
+def update_user_profile(email, name=None, phone=None, department=None, course=None, programme=None):
+	"""
+	Update user profile fields in database.
+	"""
+	try:
+		if not any([name, phone, department, course, programme]):
+			return False, "No values to update"
+
+		conn = get_connection()
+		cursor = conn.cursor()
+		fields = []
+		params = []
+		if name is not None:
+			fields.append("name = ?")
+			params.append(name)
+		if phone is not None:
+			fields.append("phone = ?")
+			params.append(phone)
+		if department is not None:
+			fields.append("department = ?")
+			params.append(department)
+		if course is not None:
+			fields.append("course = ?")
+			params.append(course)
+		if programme is not None:
+			fields.append("programme = ?")
+			params.append(programme)
+
+		params.append(email)
+		cursor.execute(f"UPDATE users SET {', '.join(fields)} WHERE email = ?", params)
+		conn.commit()
+		conn.close()
+		if cursor.rowcount > 0:
+			return True, "Profile updated"
+		return False, "User not found"
+	except Exception as e:
+		return False, f"Database error: {str(e)}"
 
 
 def update_user_role(email, new_role):
