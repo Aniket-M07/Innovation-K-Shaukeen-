@@ -52,6 +52,12 @@ function setupEventListeners() {
 		elements.searchInput.addEventListener('keydown', handleKeyNavigation);
 	}
 
+	// Voice search and clear button
+	const voiceButton = document.getElementById('voice-search');
+	const clearButton = document.getElementById('clear-search');
+	if (voiceButton) voiceButton.addEventListener('click', handleVoiceSearch);
+	if (clearButton) clearButton.addEventListener('click', handleClearSearch);
+
 	// Click handler for autocomplete suggestions
 	if (elements.suggestionsContainer) {
 		elements.suggestionsContainer.addEventListener('click', handleSuggestionClick);
@@ -81,7 +87,7 @@ function setupEventListeners() {
  */
 function handleSearchInput() {
 	clearTimeout(state.autocompleteTimer);
-	
+
 	const value = elements.searchInput.value.trim();
 	state.currentQuery = value;
 
@@ -97,18 +103,42 @@ function handleSearchInput() {
 }
 
 /**
+ * Simulate voice search input and update query field
+ */
+function handleVoiceSearch() {
+	const simulated = prompt('Simulated voice input:', 'Find faculty contact');
+	if (!simulated) return;
+	if (elements.searchInput) {
+		elements.searchInput.value = simulated;
+		elements.searchInput.focus();
+		elements.searchInput.dispatchEvent(new Event('input', { bubbles: true }));
+	}
+}
+
+/**
+ * Clear the search input and suggestions
+ */
+function handleClearSearch() {
+	if (elements.searchInput) {
+		elements.searchInput.value = '';
+		clearSuggestions();
+		elements.searchInput.focus();
+	}
+}
+
+/**
  * Fetch autocomplete suggestions from backend
  */
 async function fetchAutocomplete(query) {
 	try {
 		const response = await fetch(`/autocomplete?q=${encodeURIComponent(query)}`);
-		
+
 		if (!response.ok) {
 			throw new Error('Autocomplete request failed');
 		}
 
 		const data = await response.json();
-		
+
 		if (!data.suggestions || data.suggestions.length === 0) {
 			clearSuggestions();
 			return;
@@ -175,7 +205,7 @@ function handleKeyNavigation(event) {
 	const suggestions = elements.suggestionsContainer.querySelectorAll('button');
 	if (suggestions.length === 0) return;
 
-	const currentIndex = Array.from(suggestions).findIndex(btn => 
+	const currentIndex = Array.from(suggestions).findIndex(btn =>
 		btn === document.activeElement
 	);
 
@@ -225,6 +255,12 @@ async function handleSearchSubmit(event) {
 		return;
 	}
 
+	// Save local search history for quick access across sections
+	const localHistory = JSON.parse(localStorage.getItem('campus_recent_searches') || '[]');
+	const dedup = localHistory.filter(item => item.toLowerCase() !== query.toLowerCase());
+	dedup.unshift(query);
+	localStorage.setItem('campus_recent_searches', JSON.stringify(dedup.slice(0, 20)));
+
 	const isPrefixSearch = elements.prefixCheckbox?.checked || false;
 	const isFilenameSearch = elements.filenameCheckbox?.checked || false;
 
@@ -254,7 +290,7 @@ async function performSearch(query, prefix, filename) {
 	});
 
 	const response = await fetch(`/search?${params.toString()}`);
-	
+
 	if (!response.ok) {
 		throw new Error('Search request failed');
 	}
@@ -263,7 +299,7 @@ async function performSearch(query, prefix, filename) {
 	// For a pure AJAX solution, we'd need a JSON endpoint
 	// For now, we'll reload the page which is what the form does anyway
 	window.location.href = `/search?${params.toString()}`;
-	
+
 	// Return empty array since we're redirecting
 	return [];
 }
@@ -332,7 +368,7 @@ function createResultCard(result) {
  */
 function handleUploadSubmit(event) {
 	const fileInput = elements.uploadForm.querySelector('input[type="file"]');
-	
+
 	if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
 		event.preventDefault();
 		showNotification('Please select a file to upload', 'warning');
@@ -414,7 +450,7 @@ function hideLoadingIndicator() {
  */
 function scrollToResults() {
 	if (elements.resultsSection) {
-		elements.resultsSection.scrollIntoView({ 
+		elements.resultsSection.scrollIntoView({
 			behavior: 'smooth',
 			block: 'start'
 		});
@@ -424,7 +460,7 @@ function scrollToResults() {
 /**
  * Scroll to search section (triggered by nav search icon)
  */
-window.scrollToSearch = function() {
+window.scrollToSearch = function () {
 	const searchSection = document.getElementById('search-section');
 	if (searchSection) {
 		searchSection.scrollIntoView({ behavior: 'smooth' });
@@ -475,9 +511,9 @@ function showNotification(message, type = 'info') {
 		right: '20px',
 		padding: '1rem 1.5rem',
 		borderRadius: '8px',
-		background: type === 'error' ? '#f56565' : 
-		           type === 'warning' ? '#ed8936' : 
-		           type === 'success' ? '#48bb78' : '#667eea',
+		background: type === 'error' ? '#f56565' :
+			type === 'warning' ? '#ed8936' :
+				type === 'success' ? '#48bb78' : '#667eea',
 		color: 'white',
 		fontWeight: '600',
 		boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
