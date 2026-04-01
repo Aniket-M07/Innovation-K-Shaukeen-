@@ -163,7 +163,11 @@ The app will be available at:
 - `http://127.0.0.1:5000`
 - `http://localhost:5000`
 
+
+
 ## 🔐 Authentication Flow
+
+
 
 1. Navigate to `/signup` to create a new account
 2. Enter: name, email, password, role (Student/Admin)
@@ -172,7 +176,11 @@ The app will be available at:
 5. Admin users can upload documents via `/upload`
 6. Students can search, bookmark, and explore campus info
 
+
+
 ## 📍 Available Routes
+
+
 
 | Route | Method | Description |
 |-------|--------|-------------|
@@ -191,7 +199,11 @@ The app will be available at:
 | `/upload` | POST | Admin document upload |
 | `/files/<filename>` | GET | Download/view documents |
 
+
+
 ## 💡 Key Features Explained
+
+
 
 ### Smart Search
 - Type in the search box to see live suggestions
@@ -200,20 +212,28 @@ The app will be available at:
 - Select category filter to narrow results
 - Use prefix/filename checkboxes for advanced search
 
+
+
 ### Faculty Search
 - Search by faculty name, department, or cabin number
 - View availability status (Available/In Meeting/On Leave)
 - Bookmark faculty cards for quick access
+
+
 
 ### Bookmarking
 - Click "Bookmark" button on any item (faculty, notice, document)
 - View all bookmarks in Profile > Account Activity
 - Bookmarks persist in current session
 
+
+
 ### Recent Searches
 - Automatically tracked as you search
 - Displayed on dashboard and profile
 - Clear all with one click
+
+
 
 ## 🗄️ Database
 
@@ -221,6 +241,8 @@ The app uses SQLite (`backend/users.db`). The database is created automatically 
 
 - **users table**: Stores user credentials, role, phone, department, course, programme
 - Automatic schema creation with migration support for legacy databases
+
+
 
 ## 📁 File Structure Highlights
 
@@ -231,6 +253,8 @@ The app uses SQLite (`backend/users.db`). The database is created automatically 
 - `frontend/static/style.css`: Comprehensive styling with responsive design
 - `frontend/static/script.js`: Client-side search, autocomplete, voice simulation
 
+
+
 ## 🔒 Security Notes
 
 - Passwords are hashed using werkzeug security
@@ -239,12 +263,16 @@ The app uses SQLite (`backend/users.db`). The database is created automatically 
 - Admin-only routes protected with decorator
 - File uploads validated and secured
 
+
+
 ## 📝 License & Notes
 
 - User database stored at: `backend/users.db`
 - Uploaded documents stored at: `backend/uploads/`
 - For production, set `SECRET_KEY` environment variable
 - In development, default secret key is used (change in production)
+
+
 
 ## 🎯 MVP Features Implemented
 
@@ -263,6 +291,8 @@ The app uses SQLite (`backend/users.db`). The database is created automatically 
 ✅ Session-based History Tracking  
 ✅ Category-based Filtering  
 
+
+
 ## 🚧 Future Enhancements
 
 - Real voice-to-text API integration
@@ -271,3 +301,4 @@ The app uses SQLite (`backend/users.db`). The database is created automatically 
 - Advanced analytics dashboard
 - Mobile app version
 - Real-time notifications using WebSockets
+
