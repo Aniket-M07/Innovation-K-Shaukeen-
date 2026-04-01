@@ -55,7 +55,11 @@ class CampusSearchEngine:
 		self.documents: Dict[int, Dict[str, str]] = {}
 		self.doc_counter = 0
 
-	def add_document(self, title: str, content: str, filename: str) -> int:
+	def add_document(self, title: str, content: str, filename: str, category: str = None) -> int:
+		"""Add document to index with optional category metadata."""
+		if category is None:
+			category = self._infer_category(filename)
+
 		tokens = tokenize(content)
 		if not tokens:
 			return -1
@@ -66,6 +70,7 @@ class CampusSearchEngine:
 			"title": title,
 			"filename": filename,
 			"length": str(len(tokens)),
+			"category": category,
 		}
 
 		term_counts: Dict[str, int] = {}
@@ -81,6 +86,21 @@ class CampusSearchEngine:
 			self.trie.insert(term)
 
 		return doc_id
+
+	def _infer_category(self, filename: str) -> str:
+		"""Infer a document category from the filename or extension."""
+		lower_name = filename.lower()
+		if any(keyword in lower_name for keyword in ["faculty", "staff", "professor", "teacher"]):
+			return "Faculty"
+		if any(keyword in lower_name for keyword in ["class", "room", "lecture", "lab"]):
+			return "Classrooms"
+		if any(keyword in lower_name for keyword in ["notice", "announcement", "bulletin"]):
+			return "Notices"
+		if any(keyword in lower_name for keyword in ["event", "seminar", "workshop", "conference"]):
+			return "Events"
+		if lower_name.endswith(".pdf") or lower_name.endswith(".txt"):
+			return "Documents"
+		return "General"
 
 	def keyword_search(self, query: str) -> List[Tuple[int, int]]:
 		return self._search(query, prefix=False)
