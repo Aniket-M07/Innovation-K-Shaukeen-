@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Campus Map - Intelligent Campus Search Engine</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+    {% include '_navbar.html' %}
+
+    <div class="container">
+        <section class="card">
+            <h2>🗺️ Campus Map</h2>
+            <p>Find buildings, departments, classrooms and labs quickly.</p>
+            <div class="map-container">
+                <div class="static-map">Campus map image placeholder</div>
+                <ul class="map-list">
+                    {% for place in locations %}
+                    <li><strong>{{ place.name }}</strong> – {{ place.type }} (Building {{ place.building }})</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </section>
+    </div>
+</body>
+
+</html>
