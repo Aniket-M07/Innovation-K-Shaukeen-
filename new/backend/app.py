@@ -1,6 +1,7 @@
 import os
 from functools import wraps
 from datetime import timedelta
+from uuid import uuid4
 
 from flask import Flask, abort, jsonify, redirect, render_template, request, send_from_directory, url_for, session
 from werkzeug.utils import secure_filename
@@ -11,17 +12,19 @@ from search_engine import CampusSearchEngine
 from database import init_db, add_user, get_user, get_user_by_email
 
 
-UPLOAD_DIR = os.path.join(os.path.dirname(__file__), "uploads")
-ALLOWED_EXTENSIONS = {"pdf", "txt"}
-
-
 TEMPLATES_DIR = os.path.join(os.path.dirname(__file__), "..", "frontend", "templates")
 STATIC_DIR = os.path.join(os.path.dirname(__file__), "..", "frontend", "static")
+UPLOAD_DIR = os.path.join(os.path.dirname(__file__), "uploads")
+PROFILE_IMAGE_DIR = os.path.join(STATIC_DIR, "images", "profiles")
+ALLOWED_EXTENSIONS = {"pdf", "txt"}
+ALLOWED_IMAGE_EXTENSIONS = {"png", "jpg", "jpeg", "webp", "gif"}
 
 
 def ensure_upload_dir() -> None:
 	if not os.path.isdir(UPLOAD_DIR):
 		os.makedirs(UPLOAD_DIR, exist_ok=True)
+	if not os.path.isdir(PROFILE_IMAGE_DIR):
+		os.makedirs(PROFILE_IMAGE_DIR, exist_ok=True)
 
 
 def allowed_file(filename: str) -> bool:
@@ -36,16 +39,23 @@ def read_text_file(path: str) -> str:
 		return file.read()
 
 
+def allowed_image_file(filename: str) -> bool:
+	if "." not in filename:
+		return False
+	ext = filename.rsplit(".", 1)[1].lower()
+	return ext in ALLOWED_IMAGE_EXTENSIONS
+
+
 app = Flask(__name__, template_folder=TEMPLATES_DIR, static_folder=STATIC_DIR, static_url_path='/static')
 search_index = CampusSearchEngine()
 
 # Sample campus directory and notifications for MVP
 FACULTY_DIRECTORY = [
-	{"name": "Dr. Anita Sharma", "department": "Computer Science", "cabin": "C-201", "availability": "Available"},
-	{"name": "Prof. Rajesh Kumar", "department": "Mechanical Engineering", "cabin": "M-105", "availability": "In Meeting"},
-	{"name": "Dr. Nisha Verma", "department": "Mathematics", "cabin": "B-302", "availability": "Available"},
-	{"name": "Dr. Sunita Singh", "department": "Physics", "cabin": "P-112", "availability": "On Leave"},
-	{"name": "Mr. Rahul Gupta", "department": "Civil Engineering", "cabin": "C-114", "availability": "Available"},
+	{"name": "Dr. Anita Sharma", "department": "Computer Science", "cabin": "C-201", "staff_room": "B211", "contact": "9234587800", "email": "anita@ggmail.com", "availability": "Available"},
+	{"name": "Prof. Rajesh Kumar", "department": "Mechanical Engineering", "cabin": "M-105", "staff_room": "B312", "contact": "9876543210", "email": "rajesh@college.com", "availability": "In Meeting"},
+	{"name": "Dr. Nisha Verma", "department": "Mathematics", "cabin": "B-302", "staff_room": "A108", "contact": "9123456789", "email": "nisha@college.com", "availability": "Available"},
+	{"name": "Dr. Sunita Singh", "department": "Physics", "cabin": "P-112", "staff_room": "C404", "contact": "9456789012", "email": "sunita@college.com", "availability": "On Leave"},
+	{"name": "Mr. Rahul Gupta", "department": "Civil Engineering", "cabin": "C-114", "staff_room": "D205", "contact": "9789012345", "email": "rahul@college.com", "availability": "Available"},
 ]
 
 NOTICES = [
@@ -197,6 +207,7 @@ def signup():
 		session["user_id"] = email
 		session["user_name"] = name
 		session["role"] = role
+		session["profile_image"] = ""
 		session.permanent = True
 		return redirect(url_for("index"))
 	else:
@@ -243,6 +254,7 @@ def login():
 	session["department"] = user.get("department", "")
 	session["course"] = user.get("course", "")
 	session["programme"] = user.get("programme", "")
+	session["profile_image"] = user.get("profile_image", "")
 	session.permanent = remember is not None
 	
 	return redirect(url_for("index"))
@@ -360,11 +372,37 @@ def campus_map():
 @login_required
 def faculty():
 	q = request.args.get("q", "").lower()
+	department_filter = request.args.get("department", "")
+	staff_room_filter = request.args.get("staff_room", "")
+	
+	matches = FACULTY_DIRECTORY
+	
+	# Filter by search query
 	if q:
-		matches = [f for f in FACULTY_DIRECTORY if q in f["name"].lower() or q in f["department"].lower() or q in f["cabin"].lower()]
-	else:
-		matches = FACULTY_DIRECTORY
-	return render_template("faculty.html", faculty=matches, query=q, active_page="faculty")
+		matches = [f for f in matches if q in f["name"].lower() or q in f["department"].lower() or q in f["cabin"].lower() or q in f["contact"].lower() or q in f["email"].lower()]
+	
+	# Filter by department
+	if department_filter:
+		matches = [f for f in matches if f["department"] == department_filter]
+	
+	# Filter by staff room
+	if staff_room_filter:
+		matches = [f for f in matches if f["staff_room"] == staff_room_filter]
+	
+	# Get unique departments and staff rooms for filter options
+	departments = sorted(list(set(f["department"] for f in FACULTY_DIRECTORY)))
+	staff_rooms = sorted(list(set(f["staff_room"] for f in FACULTY_DIRECTORY)))
+	
+	return render_template(
+		"faculty.html",
+		faculty=matches,
+		query=q,
+		department_filter=department_filter,
+		staff_room_filter=staff_room_filter,
+		departments=departments,
+		staff_rooms=staff_rooms,
+		active_page="faculty"
+	)
 
 
 @app.route("/notices")
@@ -395,6 +433,16 @@ def profile():
 		if request.form.get("profile_update"):
 			name = request.form.get("name", session.get("user_name", ""))
 			phone = request.form.get("phone", session.get("phone", ""))
+			profile_image = session.get("profile_image", "")
+
+			uploaded_image = request.files.get("profile_picture")
+			if uploaded_image and uploaded_image.filename:
+				if allowed_image_file(uploaded_image.filename):
+					ext = uploaded_image.filename.rsplit(".", 1)[1].lower()
+					safe_name = f"{uuid4().hex}.{ext}"
+					save_path = os.path.join(PROFILE_IMAGE_DIR, safe_name)
+					uploaded_image.save(save_path)
+					profile_image = f"images/profiles/{safe_name}"
 
 			# update DB
 			from database import update_user_profile
@@ -402,16 +450,19 @@ def profile():
 				email=session.get("user_id"),
 				name=name,
 				phone=phone,
+				profile_image=profile_image,
 			)
 			if success:
 				session["user_name"] = name
 				session["phone"] = phone
+				session["profile_image"] = profile_image
 			return redirect(url_for("profile"))
 
 	return render_template(
 		"profile.html",
 		user_name=session.get("user_name", "Student"),
 		user_email=session.get("user_id", ""),
+		user_profile_image=session.get("profile_image", ""),
 		role=session.get("role", "Student"),
 		phone=session.get("phone", ""),
 		department=session.get("department", "") if session.get("department") else "N/A",
