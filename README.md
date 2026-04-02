@@ -276,20 +276,20 @@ The app uses SQLite (`backend/users.db`). The database is created automatically 
 
 ## 🎯 MVP Features Implemented
 
-✅ Smart Search Upgrade  
-✅ Search Result Categorization  
-✅ Voice Search Simulation  
-✅ Campus Map Section  
-✅ Faculty Finder  
-✅ Notice System  
-✅ Bookmark Feature  
-✅ Notification System  
-✅ Profile Improvements  
-✅ Better Dashboard Experience  
-✅ Modern UI Design  
-✅ Consistent Navigation  
-✅ Session-based History Tracking  
-✅ Category-based Filtering  
+✅ Smart Search Upgrade.  
+✅ Search Result Categorization.  
+✅ Voice Search Simulation.  
+✅ Campus Map Section.  
+✅ Faculty Finder.  
+✅ Notice System.  
+✅ Bookmark Feature.  
+✅ Notification System.  
+✅ Profile Improvements.  
+✅ Better Dashboard Experience.  
+✅ Modern UI Design.  
+✅ Consistent Navigation.  
+✅ Session-based History Tracking. 
+✅ Category-based filtering.  
 
 
 
