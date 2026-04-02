@@ -50,11 +50,12 @@ def init_db():
 			department TEXT DEFAULT '',
 			course TEXT DEFAULT '',
 			programme TEXT DEFAULT '',
+			profile_image TEXT DEFAULT '',
 			created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 		)
 	""")
 	# 1. Ensure legacy databases have fields when not present
-	for col in ["phone", "department", "course", "programme"]:
+	for col in ["phone", "department", "course", "programme", "profile_image"]:
 		try:
 			cursor.execute(f"ALTER TABLE users ADD COLUMN {col} TEXT DEFAULT ''")
 		except Exception:
@@ -65,7 +66,7 @@ def init_db():
 	print(f"✓ Database initialized at {DB_PATH}")
 
 
-def add_user(name, email, password, role="Student", phone="", department="", course="", programme=""):
+def add_user(name, email, password, role="Student", phone="", department="", course="", programme="", profile_image=""):
 	"""
 	Add a new user to the database
 	
@@ -90,10 +91,10 @@ def add_user(name, email, password, role="Student", phone="", department="", cou
 		# Insert new user
 		cursor.execute(
 			"""
-			INSERT INTO users (name, email, password, role, phone, department, course, programme)
-			VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+			INSERT INTO users (name, email, password, role, phone, department, course, programme, profile_image)
+			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
 			""",
-			(name, email, password, role, phone, department, course, programme)
+			(name, email, password, role, phone, department, course, programme, profile_image)
 		)
 		
 		conn.commit()
@@ -260,12 +261,12 @@ def delete_user(email):
 		return False, f"Error: {str(e)}"
 
 
-def update_user_profile(email, name=None, phone=None, department=None, course=None, programme=None):
+def update_user_profile(email, name=None, phone=None, department=None, course=None, programme=None, profile_image=None):
 	"""
 	Update user profile fields in database.
 	"""
 	try:
-		if not any([name, phone, department, course, programme]):
+		if not any([name, phone, department, course, programme, profile_image]):
 			return False, "No values to update"
 
 		conn = get_connection()
@@ -287,6 +288,9 @@ def update_user_profile(email, name=None, phone=None, department=None, course=No
 		if programme is not None:
 			fields.append("programme = ?")
 			params.append(programme)
+		if profile_image is not None:
+			fields.append("profile_image = ?")
+			params.append(profile_image)
 
 		params.append(email)
 		cursor.execute(f"UPDATE users SET {', '.join(fields)} WHERE email = ?", params)
