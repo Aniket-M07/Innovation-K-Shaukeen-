@@ -14,7 +14,13 @@
     <div class="container profile-page-wrapper">
         <section class="profile-card">
             <div class="profile-header">
-                <div class="profile-avatar">{{ user_name[0]|upper }}</div>
+                <div class="profile-avatar">
+                    {% if user_profile_image %}
+                    <img src="{{ url_for('static', filename=user_profile_image) }}" alt="Profile photo" class="profile-avatar-image" />
+                    {% else %}
+                    {{ user_name[0]|upper }}
+                    {% endif %}
+                </div>
                 <div>
                     <h1 class="profile-name">{{ user_name }} <small>({{ role }})</small></h1>
                     <p class="profile-email">{{ user_email }}</p>
@@ -27,7 +33,7 @@
             <div class="profile-summary-grid">
                 <div class="profile-info-box">
                     <h3>Edit Profile</h3>
-                    <form method="post" action="/profile" class="profile-pref-form">
+                    <form method="post" action="/profile" class="profile-pref-form" enctype="multipart/form-data">
                         <input type="hidden" name="profile_update" value="1" />
                         <label>Display Name</label>
                         <input type="text" name="name" value="{{ user_name }}" required />
@@ -39,7 +45,7 @@
                         <input type="text" name="phone" placeholder="Enter phone number" value="{{ phone }}" />
 
                         <label>Profile Picture</label>
-                        <input type="file" disabled title="Upload not enabled in this MVP" />
+                        <input type="file" name="profile_picture" accept=".png,.jpg,.jpeg,.webp,.gif,image/*" />
 
                         <button type="submit">Save Profile</button>
                     </form>
