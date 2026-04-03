@@ -1,4 +1,5 @@
 import os
+import shutil
 from functools import wraps
 from datetime import timedelta
 from uuid import uuid4
@@ -15,6 +16,7 @@ from database import init_db, add_user, get_user, get_user_by_email
 TEMPLATES_DIR = os.path.join(os.path.dirname(__file__), "..", "frontend", "templates")
 STATIC_DIR = os.path.join(os.path.dirname(__file__), "..", "frontend", "static")
 UPLOAD_DIR = os.path.join(os.path.dirname(__file__), "uploads")
+ADMIN_UPLOAD_DIR = os.path.join(UPLOAD_DIR, "admin_uploaded_files")
 PROFILE_IMAGE_DIR = os.path.join(STATIC_DIR, "images", "profiles")
 ALLOWED_EXTENSIONS = {"pdf", "txt"}
 ALLOWED_IMAGE_EXTENSIONS = {"png", "jpg", "jpeg", "webp", "gif"}
@@ -23,6 +25,8 @@ ALLOWED_IMAGE_EXTENSIONS = {"png", "jpg", "jpeg", "webp", "gif"}
 def ensure_upload_dir() -> None:
 	if not os.path.isdir(UPLOAD_DIR):
 		os.makedirs(UPLOAD_DIR, exist_ok=True)
+	if not os.path.isdir(ADMIN_UPLOAD_DIR):
+		os.makedirs(ADMIN_UPLOAD_DIR, exist_ok=True)
 	if not os.path.isdir(PROFILE_IMAGE_DIR):
 		os.makedirs(PROFILE_IMAGE_DIR, exist_ok=True)
 
@@ -37,6 +41,66 @@ def allowed_file(filename: str) -> bool:
 def read_text_file(path: str) -> str:
 	with open(path, "r", encoding="utf-8", errors="ignore") as file:
 		return file.read()
+
+
+def _is_within_directory(path: str, base_dir: str) -> bool:
+	base_dir = os.path.abspath(base_dir)
+	path = os.path.abspath(path)
+	return os.path.commonpath([path, base_dir]) == base_dir
+
+
+def _resolve_admin_upload_path(relative_path: str) -> str:
+	cleaned = os.path.normpath(relative_path.replace("\\", os.sep).replace("/", os.sep))
+	if not cleaned or cleaned in {".", os.pardir}:
+		abort(400)
+	if os.path.isabs(cleaned) or cleaned.startswith(f"{os.pardir}{os.sep}"):
+		abort(400)
+	path = os.path.abspath(os.path.join(ADMIN_UPLOAD_DIR, cleaned))
+	if not _is_within_directory(path, ADMIN_UPLOAD_DIR):
+		abort(400)
+	return path
+
+
+def get_uploaded_files():
+	"""Return uploaded document metadata sorted by newest first."""
+	ensure_upload_dir()
+	items = []
+	seen_files = {}
+
+	if os.path.isdir(ADMIN_UPLOAD_DIR):
+		for entry in os.scandir(ADMIN_UPLOAD_DIR):
+			if entry.is_dir():
+				items.append({
+					"filename": entry.name,
+					"path": entry.name,
+					"kind": "folder",
+					"size_kb": None,
+					"updated_at": entry.stat().st_mtime,
+				})
+				continue
+			if not allowed_file(entry.name):
+				continue
+			seen_files[entry.name] = {
+				"filename": entry.name,
+				"path": entry.name,
+				"kind": "file",
+				"size_kb": max(1, round(entry.stat().st_size / 1024)),
+				"updated_at": entry.stat().st_mtime,
+			}
+
+	if os.path.isdir(UPLOAD_DIR):
+		for entry in os.scandir(UPLOAD_DIR):
+			if entry.is_file() and allowed_file(entry.name) and entry.name not in seen_files:
+				seen_files[entry.name] = {
+					"filename": entry.name,
+					"path": entry.name,
+					"kind": "file",
+					"size_kb": max(1, round(entry.stat().st_size / 1024)),
+					"updated_at": entry.stat().st_mtime,
+				}
+
+	items.extend(seen_files.values())
+	return sorted(items, key=lambda item: item["updated_at"], reverse=True)
 
 
 def allowed_image_file(filename: str) -> bool:
@@ -133,9 +197,11 @@ def _pending_notifications_count():
 @app.route("/")
 @login_required
 def index():
+	uploaded_files = get_uploaded_files() if session.get("role") == "Admin" else []
 	return render_template(
 		"index.html",
 		total_docs=len(search_index.documents),
+		uploaded_files=uploaded_files,
 		results=[],
 		grouped_results={},
 		query="",
@@ -280,7 +346,7 @@ def upload():
 		return redirect(url_for("index"))
 
 	filename = secure_filename(file.filename)
-	path = os.path.join(UPLOAD_DIR, filename)
+	path = os.path.join(ADMIN_UPLOAD_DIR, filename)
 	file.save(path)
 
 	ext = filename.rsplit(".", 1)[1].lower()
@@ -291,6 +357,39 @@ def upload():
 
 	title = os.path.splitext(filename)[0]
 	search_index.add_document(title=title, content=content, filename=filename)
+	return redirect(url_for("index"))
+
+
+@app.route("/upload/delete", methods=["POST"])
+@admin_required
+def delete_uploaded_item():
+	ensure_upload_dir()
+	target_path = request.form.get("path", "").strip()
+	if not target_path:
+		abort(400)
+
+	filename = None
+	admin_path = _resolve_admin_upload_path(target_path)
+	if os.path.isdir(admin_path):
+		shutil.rmtree(admin_path)
+	else:
+		candidates = [admin_path]
+		if os.sep not in target_path and "/" not in target_path and "\\" not in target_path:
+			candidates.append(os.path.abspath(os.path.join(UPLOAD_DIR, os.path.basename(target_path))))
+
+		deleted = False
+		for candidate in candidates:
+			if os.path.isfile(candidate):
+				os.remove(candidate)
+				deleted = True
+				filename = os.path.basename(candidate)
+
+		if not deleted:
+			abort(404)
+
+	if filename:
+		search_index.remove_document_by_filename(filename)
+
 	return redirect(url_for("index"))
 
 @app.route("/search")
@@ -338,6 +437,7 @@ def search():
 	return render_template(
 		"index.html",
 		total_docs=len(search_index.documents),
+		uploaded_files=get_uploaded_files() if session.get("role") == "Admin" else [],
 		results=results,
 		grouped_results=grouped_results,
 		query=query,
@@ -520,11 +620,16 @@ def autocomplete():
 def serve_file(filename: str):
 	if not allowed_file(filename):
 		abort(404)
-	path = os.path.join(UPLOAD_DIR, filename)
+	path = os.path.join(ADMIN_UPLOAD_DIR, filename)
 	if not os.path.isfile(path):
-		abort(404)
+		# Backward compatibility for files uploaded before admin folder split.
+		legacy_path = os.path.join(UPLOAD_DIR, filename)
+		if os.path.isfile(legacy_path):
+			path = legacy_path
+		else:
+			abort(404)
 	as_attachment = request.args.get("download") == "1"
-	return send_from_directory(UPLOAD_DIR, filename, as_attachment=as_attachment)
+	return send_from_directory(os.path.dirname(path), os.path.basename(path), as_attachment=as_attachment)
 
 
 if __name__ == "__main__":
