@@ -77,7 +77,8 @@ class CampusSearchEngine:
 		if category is None:
 			category = self._infer_category(filename)
 
-		tokens = tokenize(content)
+		search_text = " ".join(part for part in [title, filename, content] if part)
+		tokens = tokenize(search_text)
 		if not tokens:
 			return -1
 
