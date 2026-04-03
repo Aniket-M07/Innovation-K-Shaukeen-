@@ -27,11 +27,10 @@
 		<section class="card" id="upload-section">
 			<h2>📤 Upload Documents</h2>
 			<form method="post" action="/upload" enctype="multipart/form-data">
-				<input type="file" name="file" required />
+				<input type="file" name="file" accept=".pdf,.txt,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.png,.jpg,.jpeg,.webp,.gif" required />
 				<button type="submit">Upload Document</button>
 			</form>
-			<p class="upload-info">📄 Supports PDF and TXT files | Total documents in system: <strong>{{ total_docs
-					}}</strong></p>
+			<p class="upload-info">📄 Supports PDF, TXT, Word, PowerPoint, Excel, and image files | Total files in system: <strong>{{ total_files }}</strong></p>
 			<div class="admin-uploaded-files">
 				<h3>🗂 Uploaded Files</h3>
 				{% if uploaded_files %}
