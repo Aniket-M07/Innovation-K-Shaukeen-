@@ -32,6 +32,37 @@
 			</form>
 			<p class="upload-info">📄 Supports PDF and TXT files | Total documents in system: <strong>{{ total_docs
 					}}</strong></p>
+			<div class="admin-uploaded-files">
+				<h3>🗂 Uploaded Files</h3>
+				{% if uploaded_files %}
+				<ul class="admin-uploaded-list">
+					{% for file in uploaded_files %}
+					<li>
+						<div class="uploaded-file-meta">
+							<strong>{% if file.kind == 'folder' %}📁 {% endif %}{{ file.filename }}</strong>
+							{% if file.kind == 'file' %}
+							<span>{{ file.size_kb }} KB</span>
+							{% else %}
+							<span>Folder</span>
+							{% endif %}
+						</div>
+						<div class="uploaded-file-actions">
+							{% if file.kind == 'file' %}
+							<a href="/files/{{ file.path }}" target="_blank">Open</a>
+							<a href="/files/{{ file.path }}?download=1">Download</a>
+							{% endif %}
+							<form method="post" action="/upload/delete" onsubmit="return confirm('Remove {{ file.filename }}?');">
+								<input type="hidden" name="path" value="{{ file.path }}" />
+								<button type="submit" class="delete-upload-button">Delete</button>
+							</form>
+						</div>
+					</li>
+					{% endfor %}
+				</ul>
+				{% else %}
+				<p class="upload-info">No files uploaded yet.</p>
+				{% endif %}
+			</div>
 		</section>
 		{% endif %}
 
