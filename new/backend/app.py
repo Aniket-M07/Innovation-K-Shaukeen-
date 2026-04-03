@@ -18,7 +18,21 @@ STATIC_DIR = os.path.join(os.path.dirname(__file__), "..", "frontend", "static")
 UPLOAD_DIR = os.path.join(os.path.dirname(__file__), "uploads")
 ADMIN_UPLOAD_DIR = os.path.join(UPLOAD_DIR, "admin_uploaded_files")
 PROFILE_IMAGE_DIR = os.path.join(STATIC_DIR, "images", "profiles")
-ALLOWED_EXTENSIONS = {"pdf", "txt"}
+ALLOWED_EXTENSIONS = {
+	"pdf",
+	"txt",
+	"doc",
+	"docx",
+	"ppt",
+	"pptx",
+	"xls",
+	"xlsx",
+	"png",
+	"jpg",
+	"jpeg",
+	"webp",
+	"gif",
+}
 ALLOWED_IMAGE_EXTENSIONS = {"png", "jpg", "jpeg", "webp", "gif"}
 
 
@@ -200,7 +214,7 @@ def index():
 	uploaded_files = get_uploaded_files() if session.get("role") == "Admin" else []
 	return render_template(
 		"index.html",
-		total_docs=len(search_index.documents),
+		total_files=len([item for item in get_uploaded_files() if item.get("kind") == "file"]),
 		uploaded_files=uploaded_files,
 		results=[],
 		grouped_results={},
@@ -436,7 +450,7 @@ def search():
 
 	return render_template(
 		"index.html",
-		total_docs=len(search_index.documents),
+		total_files=len([item for item in get_uploaded_files() if item.get("kind") == "file"]),
 		uploaded_files=get_uploaded_files() if session.get("role") == "Admin" else [],
 		results=results,
 		grouped_results=grouped_results,
