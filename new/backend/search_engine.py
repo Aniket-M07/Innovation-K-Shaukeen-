@@ -55,6 +55,23 @@ class CampusSearchEngine:
 		self.documents: Dict[int, Dict[str, str]] = {}
 		self.doc_counter = 0
 
+	def _index_document_content(self, doc_id: int, content: str) -> None:
+		tokens = tokenize(content)
+		if not tokens:
+			return
+
+		term_counts: Dict[str, int] = {}
+		for token in tokens:
+			term_counts[token] = term_counts.get(token, 0) + 1
+
+		for term, freq in term_counts.items():
+			postings = self.inverted_index.get(term)
+			if postings is None:
+				postings = LinkedList()
+				self.inverted_index.set(term, postings)
+			postings.append(Posting(doc_id, freq))
+			self.trie.insert(term)
+
 	def add_document(self, title: str, content: str, filename: str, category: str = None) -> int:
 		"""Add document to index with optional category metadata."""
 		if category is None:
@@ -69,23 +86,32 @@ class CampusSearchEngine:
 		self.documents[doc_id] = {
 			"title": title,
 			"filename": filename,
+			"content": content,
 			"length": str(len(tokens)),
 			"category": category,
 		}
 
-		term_counts: Dict[str, int] = {}
-		for token in tokens:
-			term_counts[token] = term_counts.get(token, 0) + 1
-
-		for term, freq in term_counts.items():
-			postings = self.inverted_index.get(term)
-			if postings is None:
-				postings = LinkedList()
-				self.inverted_index.set(term, postings)
-			postings.append(Posting(doc_id, freq))
-			self.trie.insert(term)
+		self._index_document_content(doc_id, content)
 
 		return doc_id
+
+	def _rebuild_indexes(self) -> None:
+		self.inverted_index = HashTable()
+		self.trie = Trie()
+		for doc_id, meta in self.documents.items():
+			self._index_document_content(doc_id, meta.get("content", ""))
+
+	def remove_document_by_filename(self, filename: str) -> int:
+		"""Remove indexed documents that match a filename."""
+		matching_ids = [doc_id for doc_id, meta in self.documents.items() if meta.get("filename") == filename]
+		if not matching_ids:
+			return 0
+
+		for doc_id in matching_ids:
+			self.documents.pop(doc_id, None)
+
+		self._rebuild_indexes()
+		return len(matching_ids)
 
 	def _infer_category(self, filename: str) -> str:
 		"""Infer a document category from the filename or extension."""
