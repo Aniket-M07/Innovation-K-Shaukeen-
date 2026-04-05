@@ -4,6 +4,11 @@ from functools import wraps
 from datetime import timedelta
 from uuid import uuid4
 
+try:
+	from dotenv import load_dotenv
+except ImportError:  # pragma: no cover - optional dependency
+	load_dotenv = None
+
 from flask import Flask, abort, jsonify, redirect, render_template, request, send_from_directory, url_for, session
 from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -34,6 +39,10 @@ ALLOWED_EXTENSIONS = {
 	"gif",
 }
 ALLOWED_IMAGE_EXTENSIONS = {"png", "jpg", "jpeg", "webp", "gif"}
+
+
+if load_dotenv is not None:
+	load_dotenv()
 
 
 def ensure_upload_dir() -> None:
