@@ -1,273 +1,201 @@
-# Intelligent Campus Search Engine - Smart Campus MVP
+# Intelligent Campus Search Engine
 
-A modern Flask-based smart campus utility app that helps students quickly search and access campus-related information including faculty, classrooms, notices, events, and documents with an intuitive user interface.
+A Flask-based campus utility portal with authentication, searchable document indexing, faculty/notices modules, and a map page with room-number route prompts.
 
-## 🎯 Project Goal
+## Overview
 
-Transform the campus experience with a practical MVP application that integrates document search, faculty directory, notices, event information, and campus resources in one clean, responsive interface.
+This project combines:
 
-## ✨ Features
+- Session-based login/signup for `Student` and `Admin`
+- Document upload + indexing (admin)
+- Search with keyword, prefix, and filename modes
+- Campus modules (map, faculty, notices, notifications, profile)
+- Route prompt generator on the map page for room codes like `C208`
 
-### Core Features
-- **User Authentication**: Session-based signup/login with roles (`Student` and `Admin`)
-- **Profile Management**: Editable profiles with department, course, and programme information
-- **Consistent Navigation**: Fixed navbar with active page indicator across all pages
+## Current Features
 
-### 🔍 Smart Search
-- **Live Search Suggestions**: Real-time autocomplete as you type
-- **Recent Search History**: Access frequently searched queries
-- **Trending Searches**: Discover popular campus searches
-- **Category Filtering**: Filter results by Faculty / Classrooms / Notices / Events / Documents
-- **Voice Search**: Microphone button for voice input simulation
-- **Clear Button**: Quick search field reset
-- **Multiple Search Types**:
-  - Keyword search (full-text)
-  - Prefix search (autocomplete)
+### Authentication and Profile
+
+- Signup and login with hashed passwords (`werkzeug.security`)
+- Role support: `Student`, `Admin`
+- Editable profile fields: name, phone, profile photo
+- Academic details shown in profile: department, course, programme
+
+### Search Engine
+
+- Inverted index backed by custom data structures:
+  - `HashTable`
+  - `LinkedList` posting lists
+  - `Trie` for autocomplete/prefix search
+- Tokenization with stopword filtering
+- Search modes:
+  - Keyword search
+  - Prefix search
   - Filename search
+- Category inference from filename
+- Result grouping by category in dashboard
+- Live autocomplete endpoint
 
-### 📚 Search Result Categorization
-- Results grouped into organized sections:
-  - Faculty Results
-  - Classroom Results
-  - Notices
-  - Events
-  - Documents
-- Each result card displays: title, icon, category, and quick actions
+### Upload and File Access
 
-### 🎓 Campus Features
-- **Campus Map**: Building locator, department finder, classroom and lab locator
-- **Faculty Directory**: Searchable faculty list with:
-  - Faculty name
-  - Department
-  - Cabin number
-  - Availability status
-- **Notices System**:
-  - Latest notices
-  - Pinned notices (priority)
-  - Searchable notices
-  - Category badges
-- **Notifications**: Red dot indicator for unread notifications with notification screen
+- Admin-only document upload
+- Supported uploads: `pdf`, `txt`, `doc`, `docx`, `ppt`, `pptx`, `xls`, `xlsx`, `png`, `jpg`, `jpeg`, `webp`, `gif`
+- PDF text extraction via `PyPDF2`
+- Secure file serving with allowlist checks
+- Admin upload deletion with index rebuild for removed files
 
-### 💾 Bookmarks & History
-- **Bookmark Feature**: Save search results, notices, and faculty cards
-- **Persistent Bookmarks**: Stored in user session
-- **Recent Searches**: Track and access recently searched queries
-- **Search History Clearing**: One-click clear recent searches
+### Campus Modules
 
-### 👤 Enhanced Profile
-- **Profile Dashboard**: User information and activity overview
-- **Profile Editing**:
-  - Display name (editable)
-  - Phone number (editable)
-  - Email (locked for security)
-  - Profile picture placeholder (UI ready)
-- **Account Activity Section**:
-  - Bookmarks list
-  - Recent searches list
-- **Academic Info Display**:
-  - Department
-  - Course
-  - Programme
+- Faculty directory with search and filters
+- Notices page with pinned + latest sections
+- Notifications page (marks notifications read)
+- Bookmarks and recent search history in session
 
-### 🎨 Modern UI/UX
-- Clean, minimal design with consistent styling
-- Responsive layout (desktop, tablet, mobile)
-- Smooth animations and transitions
-- Professional color scheme (dark blue & red)
-- Proper spacing and typography
+### Campus Map Route Finder (Updated)
 
-### 📱 Dashboard Experience
-- **Greeting**: Time-based greeting (morning/afternoon/evening)
-- **Quick Access**: Recent and trending searches
-- **User Dashboard**: Quick campus resource access
+- Room input prompt in map section: example `C208`
+- Validates room format: `BlockLetter + 3 digits`
+- Generates step-by-step route text dynamically
+- Uses block-specific route profiles from backend:
+  - Gate number
+  - Entry hint
+  - Stairs hint
+  - Lift hint
+  - Floor notes
 
-## 🏗️ Project Architecture
+Example style of output:
+
+1. Go to C Block.
+2. Take entry from Gate No. 1.
+3. Take the main C Block entry beside the central plaza.
+4. Take the stairs just after the entry gate and go to second floor.
+5. Destination C208 is after 3 classes on your left.
+
+## Project Structure
 
 ```text
 backend/
-  app.py                    # Main Flask application with routes
-  database.py              # User management and SQLite operations
-  search_engine.py         # Campus search with category inference
+  app.py
+  database.py
+  search_engine.py
   datastructure/
-    hashtable.py          # Hash table for inverted index
-    linkedlist.py         # Linked list for posting lists
-    trie.py               # Trie for prefix search/autocomplete
+    hashtable.py
+    linkedlist.py
+    trie.py
   ingestion/
-    pdfreader.py          # PDF text extraction
-  uploads/                # Document storage
+    pdfreader.py
+  uploads/
+    admin_uploaded_files/
 
 frontend/
   templates/
-    _navbar.html          # Reusable navigation bar
-    index.html            # Dashboard & search page
-    campus_map.html       # Campus map viewer
-    faculty.html          # Faculty directory
-    notices.html          # Notices section
-    notifications.html    # Notifications page
-    profile.html          # User profile & settings
-    login.html            # Login page
-    signup.html           # Registration page
+    _navbar.html
+    index.html
+    campus_map.html
+    faculty.html
+    notices.html
+    notifications.html
+    profile.html
+    login.html
+    signup.html
   static/
-    style.css             # Modern, responsive styling
-    script.js             # Interactive features & search logic
-    images/               # Assets directory
+    script.js
+    style.css
+    images/
+      profiles/
 
 README.md
-requirements.txt (optional)
 ```
 
-## 📋 Requirements
+## Tech Stack
 
 - Python 3.9+
 - Flask
-- PyPDF2 (for PDF extraction)
-- sqlite3 (built-in)
+- SQLite (via `sqlite3`, built-in)
+- PyPDF2
+- HTML, CSS, JavaScript
 
-## ⚙️ Setup Instructions
+## Setup
 
-### 1. Create Virtual Environment
+From project root:
 
-From the project root:
+1. Create virtual environment
 
 ```bash
 python -m venv .venv
 ```
 
-### 2. Activate Virtual Environment
+2. Activate environment
 
-**Windows (PowerShell):**
+Windows PowerShell:
+
 ```powershell
 .\.venv\Scripts\Activate.ps1
 ```
 
-**macOS/Linux:**
+macOS/Linux:
+
 ```bash
 source .venv/bin/activate
 ```
 
-### 3. Install Dependencies
+3. Install dependencies
 
 ```bash
 pip install flask pypdf2
 ```
 
-## 🚀 Running the Application
+## Run
 
-From the project root:
+From project root:
 
 ```bash
 python backend/app.py
 ```
 
-The app will be available at:
+Application URLs:
+
 - `http://127.0.0.1:5000`
 - `http://localhost:5000`
 
-## 🔐 Authentication Flow
+## Routes
 
-1. Navigate to `/signup` to create a new account
-2. Enter: name, email, password, role (Student/Admin)
-3. Auto-login after signup or use `/login` page
-4. Dashboard opens with smart search and campus resources
-5. Admin users can upload documents via `/upload`
-6. Students can search, bookmark, and explore campus info
+| Route | Method | Purpose |
+|---|---|---|
+| `/` | GET | Dashboard |
+| `/signup` | GET, POST | Register user |
+| `/login` | GET, POST | Login user |
+| `/logout` | GET | Logout and clear session |
+| `/search` | GET | Search with filters/modes |
+| `/autocomplete` | GET | Trie-based suggestions |
+| `/campus-map` | GET | Campus map + room route prompts |
+| `/faculty` | GET | Faculty listing and filters |
+| `/notices` | GET | Notices page |
+| `/notifications` | GET | Notifications page |
+| `/profile` | GET, POST | Profile view/update |
+| `/bookmark` | POST | Toggle bookmark item |
+| `/clear-history` | POST | Clear recent searches |
+| `/upload` | POST | Admin upload document |
+| `/upload/delete` | POST | Admin delete uploaded file/folder |
+| `/files/<path:filename>` | GET | View/download uploaded file |
 
-## 📍 Available Routes
+## Data and Storage
 
-| Route | Method | Description |
-|-------|--------|-------------|
-| `/` | GET | Dashboard with smart search |
-| `/signup` | GET, POST | User registration |
-| `/login` | GET, POST | User login |
-| `/logout` | GET | Clear session |
-| `/search` | GET | Search documents with filters |
-| `/autocomplete` | GET | Real-time search suggestions |
-| `/campus-map` | GET | Campus locations & buildings |
-| `/faculty` | GET | Faculty directory |
-| `/notices` | GET | Campus notices & announcements |
-| `/notifications` | GET | Notifications center |
-| `/profile` | GET, POST | User profile & settings |
-| `/bookmark` | POST | Toggle bookmark status |
-| `/upload` | POST | Admin document upload |
-| `/files/<filename>` | GET | Download/view documents |
+- User database: `backend/users.db`
+- Uploaded files:
+  - `backend/uploads/admin_uploaded_files/` (current)
+  - `backend/uploads/` (legacy compatibility)
+- Profile images: `frontend/static/images/profiles/`
 
-## 💡 Key Features Explained
+## Security Notes
 
-### Smart Search
-- Type in the search box to see live suggestions
-- Click microphone (🎤) to simulate voice input
-- Click X (✖) to clear the search field
-- Select category filter to narrow results
-- Use prefix/filename checkboxes for advanced search
+- Passwords are stored as hashes
+- Session cookies: HTTP-only, SameSite=Lax
+- Admin-only protection on upload/delete routes
+- File path normalization and directory boundary checks
 
-### Faculty Search
-- Search by faculty name, department, or cabin number
-- View availability status (Available/In Meeting/On Leave)
-- Bookmark faculty cards for quick access
+## Notes
 
-### Bookmarking
-- Click "Bookmark" button on any item (faculty, notice, document)
-- View all bookmarks in Profile > Account Activity
-- Bookmarks persist in current session
-
-### Recent Searches
-- Automatically tracked as you search
-- Displayed on dashboard and profile
-- Clear all with one click
-
-## 🗄️ Database
-
-The app uses SQLite (`backend/users.db`). The database is created automatically on first run with:
-
-- **users table**: Stores user credentials, role, phone, department, course, programme
-- Automatic schema creation with migration support for legacy databases
-
-## 📁 File Structure Highlights
-
-- `backend/app.py`: All Flask routes (search, faculty, notices, profile, etc.)
-- `backend/database.py`: User management & profile updates
-- `backend/search_engine.py`: Advanced search with category inference
-- `frontend/templates/_navbar.html`: Reusable navbar component
-- `frontend/static/style.css`: Comprehensive styling with responsive design
-- `frontend/static/script.js`: Client-side search, autocomplete, voice simulation
-
-## 🔒 Security Notes
-
-- Passwords are hashed using werkzeug security
-- Session cookies are HTTP-only and same-site
-- Email is locked in profile editing
-- Admin-only routes protected with decorator
-- File uploads validated and secured
-
-## 📝 License & Notes
-
-- User database stored at: `backend/users.db`
-- Uploaded documents stored at: `backend/uploads/`
-- For production, set `SECRET_KEY` environment variable
-- In development, default secret key is used (change in production)
-
-## 🎯 MVP Features Implemented
-
-✅ Smart Search Upgrade  
-✅ Search Result Categorization  
-✅ Voice Search Simulation  
-✅ Campus Map Section  
-✅ Faculty Finder  
-✅ Notice System  
-✅ Bookmark Feature  
-✅ Notification System  
-✅ Profile Improvements  
-✅ Better Dashboard Experience  
-✅ Modern UI Design  
-✅ Consistent Navigation  
-✅ Session-based History Tracking  
-✅ Category-based Filtering  
-
-## 🚧 Future Enhancements
-
-- Real voice-to-text API integration
-- Live campus map with actual coordinates
-- Email notifications
-- Advanced analytics dashboard
-- Mobile app version
-- Real-time notifications using WebSockets
+- Set `SECRET_KEY` in environment for production.
+- `SESSION_COOKIE_SECURE` is currently `False` for local development; set to `True` under HTTPS in production.
+- This project currently uses in-memory search index population during runtime uploads. If app restarts, previously uploaded files remain on disk but are not auto-reindexed unless re-uploaded or indexed by custom startup logic.
