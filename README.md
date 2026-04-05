@@ -142,8 +142,19 @@ source .venv/bin/activate
 3. Install dependencies
 
 ```bash
-pip install flask pypdf2
+pip install flask pypdf2 python-dotenv
 ```
+
+4. Create a `.env` file in the project root
+
+```env
+PORT=3000
+API_KEY=your_secret_key_here
+DATABASE_URL=mongodb://localhost:27017/myapp
+SECRET_KEY=change-this-secret-key-before-production
+```
+
+`SECRET_KEY` is used by Flask for signed session cookies. `PORT` controls the local server port.
 
 ## Run
 
@@ -155,8 +166,10 @@ python backend/app.py
 
 Application URLs:
 
-- `http://127.0.0.1:5000`
-- `http://localhost:5000`
+- `http://127.0.0.1:3000`
+- `http://localhost:3000`
+
+If `PORT` is not set, the app falls back to `5000`.
 
 ## Routes
 
@@ -196,6 +209,7 @@ Application URLs:
 
 ## Notes
 
-- Set `SECRET_KEY` in environment for production.
+- Set `SECRET_KEY` in `.env` or your deployment environment for production.
 - `SESSION_COOKIE_SECURE` is currently `False` for local development; set to `True` under HTTPS in production.
+- The app loads `.env` automatically when `python-dotenv` is installed.
 - This project currently uses in-memory search index population during runtime uploads. If app restarts, previously uploaded files remain on disk but are not auto-reindexed unless re-uploaded or indexed by custom startup logic.
