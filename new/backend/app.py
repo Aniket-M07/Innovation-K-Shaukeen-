@@ -4,11 +4,6 @@ from functools import wraps
 from datetime import timedelta
 from uuid import uuid4
 
-try:
-	from dotenv import load_dotenv
-except ImportError:  # pragma: no cover - optional dependency
-	load_dotenv = None
-
 from flask import Flask, abort, jsonify, redirect, render_template, request, send_from_directory, url_for, session
 from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -16,7 +11,14 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from ingestion.pdfreader import extract_text_from_pdf
 from search_engine import CampusSearchEngine
 from database import init_db, add_user, get_user, get_user_by_email
+from dotenv import load_dotenv
+import os
 
+load_dotenv()
+app = Flask(__name__)
+
+secret_key = os.getenv("SECRET_KEY")
+app.config['SECRET_KEY'] = os.getenv("SECRET_KEY")
 
 TEMPLATES_DIR = os.path.join(os.path.dirname(__file__), "..", "frontend", "templates")
 STATIC_DIR = os.path.join(os.path.dirname(__file__), "..", "frontend", "static")
@@ -39,10 +41,6 @@ ALLOWED_EXTENSIONS = {
 	"gif",
 }
 ALLOWED_IMAGE_EXTENSIONS = {"png", "jpg", "jpeg", "webp", "gif"}
-
-
-if load_dotenv is not None:
-	load_dotenv()
 
 
 def ensure_upload_dir() -> None:
