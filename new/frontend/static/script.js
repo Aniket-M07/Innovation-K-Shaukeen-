@@ -20,6 +20,9 @@ const elements = {
 	resultsSection: null,
 	resultsGrid: null,
 	uploadForm: null,
+	routeForm: null,
+	routeInput: null,
+	routeResult: null,
 };
 
 // ===== INITIALIZATION =====
@@ -42,6 +45,9 @@ function initializeElements() {
 	elements.filenameCheckbox = document.querySelector('input[name="filename"]');
 	elements.uploadForm = document.querySelector('#upload-section form');
 	elements.resultsGrid = document.querySelector('.results-grid');
+	elements.routeForm = document.getElementById('room-route-form');
+	elements.routeInput = document.getElementById('room-number-input');
+	elements.routeResult = document.getElementById('route-result');
 }
 
 // ===== EVENT LISTENERS =====
@@ -79,6 +85,126 @@ function setupEventListeners() {
 	if (elements.uploadForm) {
 		elements.uploadForm.addEventListener('submit', handleUploadSubmit);
 	}
+
+	if (elements.routeForm) {
+		elements.routeForm.addEventListener('submit', handleRoomRouteSubmit);
+	}
+}
+
+// ===== CAMPUS MAP ROUTE FINDER =====
+function handleRoomRouteSubmit(event) {
+	event.preventDefault();
+
+	if (!elements.routeInput || !elements.routeResult) return;
+
+	const normalizedRoom = normalizeRoomInput(elements.routeInput.value);
+	if (!normalizedRoom) {
+		renderRouteError('Please enter a valid room number like C208, B104, or A315.');
+		return;
+	}
+
+	const routeData = buildRouteInstructions(normalizedRoom);
+	renderRouteResult(routeData);
+}
+
+function normalizeRoomInput(value) {
+	if (!value) return null;
+	const compact = value.toUpperCase().replace(/\s+/g, '');
+	const match = compact.match(/^([A-Z])(\d{3})$/);
+	if (!match) return null;
+	return `${match[1]}${match[2]}`;
+}
+
+function buildRouteInstructions(roomCode) {
+	const block = roomCode[0];
+	const roomNumber = roomCode.slice(1);
+	const floorDigit = Number(roomNumber[0]);
+	const roomPosition = Number(roomNumber.slice(1));
+	const routeProfiles = window.mapRouteProfiles || {};
+	const blockProfile = routeProfiles[block] || getFallbackBlockProfile(block);
+	const gate = blockProfile.gate || 1;
+	const floorText = getFloorText(floorDigit);
+	const floorGuide = getFloorGuide(blockProfile, floorDigit);
+	const movementHint = getMovementHint(roomPosition, block, floorDigit);
+
+	return {
+		roomCode,
+		steps: [
+			`Go to ${blockProfile.label || `${block} Block`}.`,
+			`Take entry from Gate No. ${gate}.`,
+			blockProfile.entry_hint || 'Enter through the main lobby.',
+			floorDigit === 0
+				? `Stay on the ground floor. ${floorGuide}`
+				: `${blockProfile.stairs_hint || 'Take the stairs near the entry gate.'} Go to ${floorText}. ${floorGuide}`,
+			floorDigit > 0 && blockProfile.lift_hint
+				? `If needed, ${blockProfile.lift_hint}`
+				: null,
+			`Destination ${roomCode} is ${movementHint}.`
+		].filter(Boolean)
+	};
+}
+
+function getFallbackBlockProfile(block) {
+	return {
+		label: `${block} Block`,
+		gate: 1,
+		entry_hint: 'Use the main entry gate for this block.',
+		stairs_hint: 'Take the stairs just after the entry gate.',
+		lift_hint: 'Lift is available near the central lobby.',
+		floor_notes: {},
+	};
+}
+
+function getFloorGuide(blockProfile, floorDigit) {
+	const notes = blockProfile.floor_notes || {};
+	return notes[String(floorDigit)] || 'Follow corridor signs for room sequence.';
+}
+
+function getFloorText(floorDigit) {
+	if (floorDigit <= 0) return 'ground floor';
+	if (floorDigit === 1) return 'first floor';
+	if (floorDigit === 2) return 'second floor';
+	if (floorDigit === 3) return 'third floor';
+	return `${floorDigit}th floor`;
+}
+
+function getMovementHint(roomPosition, block, floorDigit) {
+	const prefersLeft = ['C', 'E'].includes(block) || floorDigit % 2 === 0;
+	const side = prefersLeft ? 'left' : 'right';
+
+	if (roomPosition <= 10) {
+		return `after 1 class on your ${side}`;
+	}
+	if (roomPosition <= 20) {
+		return `after 3 classes on your ${side}`;
+	}
+	if (roomPosition <= 35) {
+		return `near the mid corridor on your ${side}, close to faculty cabins`;
+	}
+	if (roomPosition <= 50) {
+		return `towards the end of corridor on your ${side}`;
+	}
+	return `at the far end of the corridor on your ${side}`;
+}
+
+function renderRouteResult(routeData) {
+	if (!elements.routeResult) return;
+
+	const stepsHtml = routeData.steps
+		.map((step, index) => `<li><span>${index + 1}.</span> ${escapeHtml(step)}</li>`)
+		.join('');
+
+	elements.routeResult.classList.remove('error');
+	elements.routeResult.innerHTML = `
+		<h4>Route for ${escapeHtml(routeData.roomCode)}</h4>
+		<ul>${stepsHtml}</ul>
+	`;
+}
+
+function renderRouteError(message) {
+	if (!elements.routeResult) return;
+	elements.routeResult.classList.add('error');
+	elements.routeResult.innerHTML = `<p>${escapeHtml(message)}</p>`;
 }
 
 // ===== AUTOCOMPLETE FUNCTIONALITY =====
