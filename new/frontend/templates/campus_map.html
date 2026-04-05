@@ -15,6 +15,22 @@
         <section class="card">
             <h2>🗺️ Campus Map</h2>
             <p>Find buildings, departments, classrooms and labs quickly.</p>
+            <div class="route-finder" id="route-finder">
+                <h3>Room Route Finder</h3>
+                <p class="route-helper">Enter room number only (example: C208) and get instant directions.</p>
+                <form id="room-route-form" class="route-form" autocomplete="off">
+                    <input
+                        type="text"
+                        id="room-number-input"
+                        name="room"
+                        placeholder="Enter room no. (e.g. C208)"
+                        maxlength="5"
+                        required
+                    />
+                    <button type="submit">Show Route</button>
+                </form>
+                <div id="route-result" class="route-result" aria-live="polite"></div>
+            </div>
             <div class="map-container">
                 <div class="static-map">Campus map image placeholder</div>
                 <ul class="map-list">
@@ -25,6 +41,10 @@
             </div>
         </section>
     </div>
+    <script>
+        window.mapRouteProfiles = {{ map_route_profiles|tojson }};
+    </script>
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
 
 </html>
