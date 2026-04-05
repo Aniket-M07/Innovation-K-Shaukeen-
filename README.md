@@ -1,123 +1,188 @@
-I’ll read the current README and paste the exact updated version here so you can review it directly.
-
-Read [](file:///c%3A/Users/LENOVO/Desktop/new/README.md)
-
-Here is the updated README.md content:
-
 # Intelligent Campus Search Engine
 
-A Flask-based campus utility portal with authentication, searchable document indexing, faculty/notices modules, and a map page with room-number route prompts.
+A Flask-based campus portal that combines secure authentication, searchable campus documents, faculty lookup, notices, notifications, profile management, and a map room-route helper.
 
-## Overview
+## What This Project Does
 
-This project combines:
-
-- Session-based login/signup for Student and Admin
-- Document upload + indexing (admin)
-- Search with keyword, prefix, and filename modes
-- Campus modules (map, faculty, notices, notifications, profile)
-- Route prompt generator on the map page for room codes like C208
-
-## Current Features
-
-### Authentication and Profile
-
-- Signup and login with hashed passwords (werkzeug.security)
-- Role support: Student, Admin
-- Editable profile fields: name, phone, profile photo
-- Academic details shown in profile: department, course, programme
-
-### Search Engine
-
-- Inverted index backed by custom data structures:
-  - HashTable
-  - LinkedList posting lists
-  - Trie for autocomplete/prefix search
-- Tokenization with stopword filtering
-- Search modes:
-  - Keyword search
-  - Prefix search
-  - Filename search
-- Category inference from filename
-- Result grouping by category in dashboard
-- Live autocomplete endpoint
-
-### Upload and File Access
-
-- Admin-only document upload
-- Supported uploads: pdf, txt, doc, docx, ppt, pptx, xls, xlsx, png, jpg, jpeg, webp, gif
-- PDF text extraction via PyPDF2
-- Secure file serving with allowlist checks
-- Admin upload deletion with index rebuild for removed files
-
-### Campus Modules
-
-- Faculty directory with search and filters
-- Notices page with pinned + latest sections
-- Notifications page (marks notifications read)
-- Bookmarks and recent search history in session
-
-### Campus Map Route Finder (Updated)
-
-- Room input prompt in map section: example C208
-- Validates room format: BlockLetter + 3 digits
-- Generates step-by-step route text dynamically
-- Uses block-specific route profiles from backend:
-  - Gate number
-  - Entry hint
-  - Stairs hint
-  - Lift hint
-  - Floor notes
-
-Example style of output:
-
-1. Go to C Block.
-2. Take entry from Gate No. 1.
-3. Take the main C Block entry beside the central plaza.
-4. Take the stairs just after the entry gate and go to second floor.
-5. Destination C208 is after 3 classes on your left.
-
-## Project Structure
-
-    backend/
-      app.py
-      database.py
-      search_engine.py
-      datastructure/
-        hashtable.py
-        linkedlist.py
-        trie.py
-      ingestion/
-        pdfreader.py
-      uploads/
-        admin_uploaded_files/
-
-    frontend/
-      templates/
-        _navbar.html
-        index.html
-        campus_map.html
-        faculty.html
-        notices.html
-        notifications.html
-        profile.html
-        login.html
-        signup.html
-      static/
-        script.js
-        style.css
-        images/
-          profiles/
-
-    README.md
+- User authentication with role support (`Student`, `Admin`)
+- Admin document upload and delete with indexing into a custom search engine
+- Search modes: keyword, prefix, filename, and category filtering
+- Campus map page with room number route guidance (for codes like `C208`)
+- Faculty directory with query + filters
+- Notices and notifications modules
+- User profile editing with optional profile image upload
+- Session-based bookmarks and recent search history
 
 ## Tech Stack
 
 - Python 3.9+
 - Flask
-- SQLite (via sqlite3, built-in)
+- SQLite (`sqlite3`)
 - PyPDF2
+- python-dotenv
 - HTML, CSS, JavaScript
+
+## Project Structure
+
+```text
+.
+├── .env
+├── backend
+│   ├── app.py
+│   ├── database.py
+│   ├── search_engine.py
+│   ├── users.db
+│   ├── datastructure
+│   │   ├── __init__.py
+│   │   ├── hashtable.py
+│   │   ├── linkedlist.py
+│   │   └── trie.py
+│   ├── ingestion
+│   │   └── pdfreader.py
+│   └── uploads
+│       └── admin_uploaded_files
+├── frontend
+│   ├── static
+│   │   ├── logo.png
+│   │   ├── script.js
+│   │   ├── style.css
+│   │   └── images
+│   │       ├── image.png
+│   │       ├── krmu logo.jpg
+│   │       └── profiles
+│   └── templates
+│       ├── _navbar.html
+│       ├── campus_map.html
+│       ├── faculty.html
+│       ├── index.html
+│       ├── login.html
+│       ├── notices.html
+│       ├── notifications.html
+│       ├── profile.html
+│       └── signup.html
+└── README.md
+```
+
+## Backend Overview
+
+### `backend/app.py`
+
+Main Flask application containing:
+
+- App setup and folder paths
+- Environment loading via `python-dotenv` (when installed)
+- Session and auth configuration
+- Search engine instance initialization
+- Sample in-memory data for faculty, notices, notifications, map route profiles
+- All web routes
+- File upload/delete and serving logic
+
+### `backend/database.py`
+
+SQLite helper module:
+
+- Initializes `users` table (with legacy column migration safeguards)
+- Add/get/delete users
+- Get user by email
+- Update user profile
+- Update user role
+
+Database file location:
+
+- `backend/users.db`
+
+### `backend/search_engine.py`
+
+Custom search engine implementation:
+
+- Tokenization + stopword filtering
+- Inverted index for term-to-doc mapping
+- Trie for autocomplete/prefix search
+- Ranking based on term frequency
+- Category inference from filenames
+- Document add/remove and index rebuild operations
+
+### Custom Data Structures
+
+- `backend/datastructure/hashtable.py`: custom hash table with resizing
+- `backend/datastructure/linkedlist.py`: linked list + posting entries
+- `backend/datastructure/trie.py`: trie for autocomplete
+
+### PDF Ingestion
+
+- `backend/ingestion/pdfreader.py`: safe PDF text extraction via `PyPDF2`
+
+## Frontend Overview
+
+### Templates
+
+- `index.html`: dashboard, upload UI, search form, grouped results, news/gallery sections
+- `campus_map.html`: map info + room route finder UI
+- `faculty.html`: searchable/filterable faculty cards
+- `notices.html`: pinned/latest notices with bookmark action
+- `notifications.html`: notifications list
+- `profile.html`: profile info + edit form + profile image upload
+- `login.html`: login form
+- `signup.html`: registration form
+- `_navbar.html`: shared top navigation and session state links
+
+### Static
+
+- `script.js` includes:
+  - autocomplete behavior
+  - simulated voice search and clear button support
+  - room route instruction generation based on block/floor
+  - search loading UI helpers
+  - upload form client-side validation hooks
+- `style.css`: shared layout and module styling
+
+## Routes
+
+| Route | Method | Description |
+|---|---|---|
+| `/` | GET | Dashboard (requires login) |
+| `/signup` | GET, POST | Register account |
+| `/login` | GET, POST | Login |
+| `/logout` | GET | Logout + clear session |
+| `/search` | GET | Search documents (keyword/prefix/filename/category) |
+| `/autocomplete` | GET | Trie-backed term suggestions |
+| `/upload` | POST | Admin-only file upload |
+| `/upload/delete` | POST | Admin-only delete file/folder |
+| `/campus-map` | GET | Campus map and route finder |
+| `/faculty` | GET | Faculty listing with filters |
+| `/notices` | GET | Notices page |
+| `/notifications` | GET | Notifications page (marks all as read) |
+| `/profile` | GET, POST | Profile view/update |
+| `/bookmark` | POST | Toggle bookmark item |
+| `/clear-history` | POST | Clear search history |
+| `/files/<path:filename>` | GET | Open/download allowed uploaded file |
+
+## Authentication and Sessions
+
+- Passwords are hashed with `werkzeug.security`
+- Session keys include user identity, role, profile info, bookmarks, and search history
+- Session cookie settings:
+  - `SESSION_COOKIE_HTTPONLY=True`
+  - `SESSION_COOKIE_SAMESITE="Lax"`
+  - `SESSION_COOKIE_SECURE=False` (set `True` in HTTPS production)
+- Permanent session lifetime: 7 days
+
+## Environment Variables
+
+Create `.env` in project root:
+
+```env
+PORT=3000
+API_KEY=your_secret_key_here
+DATABASE_URL=mongodb://localhost:27017/myapp
+SECRET_KEY=change-this-secret-key-before-production
+```
+
+Notes:
+
+- `SECRET_KEY` is required for Flask session signing.
+- `PORT` controls server port (`5000` fallback if unset).
+- `API_KEY` and `DATABASE_URL` are currently present in `.env` but not consumed by backend logic yet.
 
 ## Setup
 
@@ -125,83 +190,76 @@ From project root:
 
 1. Create virtual environment
 
-    python -m venv .venv
+```bash
+python -m venv .venv
+```
 
-2. Activate environment
+2. Activate virtual environment
 
 Windows PowerShell:
 
-    Activate.ps1
+```powershell
+.\.venv\Scripts\Activate.ps1
+```
 
 macOS/Linux:
 
-    source .venv/bin/activate
+```bash
+source .venv/bin/activate
+```
 
 3. Install dependencies
 
-    pip install flask pypdf2 python-dotenv
+```bash
+pip install flask pypdf2 python-dotenv
+```
 
-4. Create a .env file in the project root
+4. Ensure `.env` exists (see above)
 
-    PORT=3000
-    API_KEY=your_secret_key_here
-    DATABASE_URL=mongodb://localhost:27017/myapp
-    SECRET_KEY=change-this-secret-key-before-production
+5. Run the app
 
-SECRET_KEY is used by Flask for signed session cookies. PORT controls the local server port.
+```bash
+python backend/app.py
+```
 
-## Run
+## Access URLs
 
-From project root:
+With `PORT=3000`:
 
-    python app.py
+- `http://127.0.0.1:3000`
+- `http://localhost:3000`
 
-Application URLs:
+If `PORT` is not set, default is `5000`.
 
-- http://127.0.0.1:3000
-- http://localhost:3000
+## File Upload Behavior
 
-If PORT is not set, the app falls back to 5000.
+Backend upload allowlist supports:
 
-## Routes
+- `pdf`, `txt`, `doc`, `docx`, `ppt`, `pptx`, `xls`, `xlsx`, `png`, `jpg`, `jpeg`, `webp`, `gif`
 
-| Route | Method | Purpose |
-|---|---|---|
-| / | GET | Dashboard |
-| /signup | GET, POST | Register user |
-| /login | GET, POST | Login user |
-| /logout | GET | Logout and clear session |
-| /search | GET | Search with filters/modes |
-| /autocomplete | GET | Trie-based suggestions |
-| /campus-map | GET | Campus map + room route prompts |
-| /faculty | GET | Faculty listing and filters |
-| /notices | GET | Notices page |
-| /notifications | GET | Notifications page |
-| /profile | GET, POST | Profile view/update |
-| /bookmark | POST | Toggle bookmark item |
-| /clear-history | POST | Clear recent searches |
-| /upload | POST | Admin upload document |
-| /upload/delete | POST | Admin delete uploaded file/folder |
-| /files/<path:filename> | GET | View/download uploaded file |
+Storage locations:
 
-## Data and Storage
+- Current admin uploads: `backend/uploads/admin_uploaded_files/`
+- Legacy fallback reads: `backend/uploads/`
 
-- User database: users.db
-- Uploaded files:
-  - backend/uploads/admin_uploaded_files/ (current)
-  - backend/uploads/ (legacy compatibility)
-- Profile images: frontend/static/images/profiles/
+## Search Behavior
+
+- Indexed fields: title, filename, and document content
+- Query modes:
+  - keyword search
+  - prefix search via trie
+  - filename search (contains or prefix)
+- Category grouping in UI results
+- Autocomplete endpoint returns term frequency
+
+## Known Implementation Notes
+
+- Indexed documents are in-memory at runtime; restart clears in-memory index until files are re-uploaded/re-indexed by custom logic.
+- `script.js` upload client-side validation currently allows `pdf` and `txt`, while backend accepts a broader set.
+- The static map panel is currently a placeholder; route guidance is text-based.
 
 ## Security Notes
 
-- Passwords are stored as hashes
-- Session cookies: HTTP-only, SameSite=Lax
-- Admin-only protection on upload/delete routes
-- File path normalization and directory boundary checks
-
-## Notes
-
-- Set SECRET_KEY in .env or your deployment environment for production.
-- SESSION_COOKIE_SECURE is currently False for local development; set to True under HTTPS in production.
-- The app loads .env automatically when python-dotenv is installed.
-- This project currently uses in-memory search index population during runtime uploads. If app restarts, previously uploaded files remain on disk but are not auto-reindexed unless re-uploaded or indexed by custom startup logic.
+- Keep `.env` private and do not commit real secrets.
+- Use a strong random `SECRET_KEY` in production.
+- Set `SESSION_COOKIE_SECURE=True` when serving over HTTPS.
