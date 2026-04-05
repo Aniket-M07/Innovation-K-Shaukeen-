@@ -151,6 +151,74 @@ NOTIFICATIONS = [
 
 TRENDING_SEARCHES = ["AI syllabus", "Campus map", "Library hours", "Faculty contact", "Notice board"]
 
+MAP_ROUTE_PROFILES = {
+	"A": {
+		"label": "A Block",
+		"gate": 1,
+		"entry_hint": "Use the front entry facing the admin lawn.",
+		"stairs_hint": "Stairs are on the right of the security desk.",
+		"lift_hint": "Lift is next to reception.",
+		"floor_notes": {
+			"0": "Move through the ground-floor corridor beside the help desk.",
+			"1": "At first-floor landing, keep the seminar wing on your left.",
+			"2": "On second floor, continue towards the classroom corridor.",
+			"3": "On third floor, follow signs for advanced lecture rooms.",
+		},
+	},
+	"B": {
+		"label": "B Block",
+		"gate": 2,
+		"entry_hint": "Enter from Gate 2 near the workshop driveway.",
+		"stairs_hint": "Main staircase is straight ahead after the metal detector.",
+		"lift_hint": "Lift lobby is behind the staircase.",
+		"floor_notes": {
+			"0": "Stay on ground floor and pass the Mechanical labs.",
+			"1": "First floor opens into staff rooms and tutorial halls.",
+			"2": "Second floor has central classrooms around the open atrium.",
+			"3": "Third floor corridor ends near project studios.",
+		},
+	},
+	"C": {
+		"label": "C Block",
+		"gate": 1,
+		"entry_hint": "Take the main C Block entry beside the central plaza.",
+		"stairs_hint": "Take the stairs just after the entry gate.",
+		"lift_hint": "Lift is adjacent to the stairs.",
+		"floor_notes": {
+			"0": "Ground floor corridor starts near Lecture Hall C-0xx.",
+			"1": "First floor has mixed classrooms and faculty cabins.",
+			"2": "Second floor is a straight academic corridor with numbered classrooms.",
+			"3": "Third floor leads to elective classrooms and labs.",
+		},
+	},
+	"D": {
+		"label": "D Block",
+		"gate": 2,
+		"entry_hint": "Use the side entry near the Computer Center.",
+		"stairs_hint": "Stairs are near the notice board wall.",
+		"lift_hint": "Lift is opposite the IT help counter.",
+		"floor_notes": {
+			"0": "Ground floor includes computer labs and service rooms.",
+			"1": "First floor corridor runs past the coding labs.",
+			"2": "Second floor opens near the innovation studio.",
+			"3": "Third floor has research and seminar spaces.",
+		},
+	},
+	"E": {
+		"label": "E Block",
+		"gate": 3,
+		"entry_hint": "Enter from sports-side Gate 3.",
+		"stairs_hint": "Staircase is beside the indoor arena passage.",
+		"lift_hint": "Lift is near the back lobby.",
+		"floor_notes": {
+			"0": "Ground floor connects to sports and activity rooms.",
+			"1": "First floor leads to multipurpose classrooms.",
+			"2": "Second floor corridor runs around the indoor court side.",
+			"3": "Third floor contains meeting and activity spaces.",
+		},
+	},
+}
+
 # ===== ADD CONFIGURATION FOR SESSIONS AND AUTHENTICATION =====
 app.secret_key = os.environ.get("SECRET_KEY", "your-secret-key-change-in-production")
 app.config["SESSION_COOKIE_SECURE"] = False  # Set to True in production with HTTPS
@@ -479,7 +547,12 @@ def campus_map():
 		{"name": "Computer Lab", "type": "Lab", "building": "D"},
 		{"name": "Sports Complex", "type": "Facility", "building": "E"},
 	]
-	return render_template("campus_map.html", locations=map_locations, active_page="map")
+	return render_template(
+		"campus_map.html",
+		locations=map_locations,
+		map_route_profiles=MAP_ROUTE_PROFILES,
+		active_page="map",
+	)
 
 
 @app.route("/faculty")
