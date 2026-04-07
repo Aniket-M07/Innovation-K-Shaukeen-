@@ -1,265 +1,268 @@
-# Intelligent Campus Search Engine
+# Smart Campus AI
 
-A Flask-based campus portal that combines secure authentication, searchable campus documents, faculty lookup, notices, notifications, profile management, and a map room-route helper.
+Smart Campus AI is a full-stack campus assistant with:
+- React frontend (Vite)
+- Node.js backend (Express + MySQL)
+- Python AI engine (FastAPI + RAG + FAISS)
+- Admin document upload, indexing, and retrieval
+- User feedback loop to improve future responses
+- Web fallback answers for general questions
 
-## What This Project Does
+---
 
-- User authentication with role support (`Student`, `Admin`)
-- Admin document upload and delete with indexing into a custom search engine
-- Search modes: keyword, prefix, filename, and category filtering
-- Campus map page with room number route guidance (for codes like `C208`)
-- Faculty directory with query + filters
-- Notices and notifications modules
-- User profile editing with optional profile image upload
-- Session-based bookmarks and recent search history
+## 1) Project Architecture
 
-## Tech Stack
+- Frontend: `src/` (React UI, chat, admin panel)
+- Backend API: `backend/` (auth, chat, admin, feedback, MySQL)
+- AI Engine: `ai_engine/` (embedding, retrieval, answer generation)
+- Vector data: `ai_engine/data/` (FAISS index + metadata)
 
-- Python 3.9+
-- Flask
-- SQLite (`sqlite3`)
-- PyPDF2
-- python-dotenv
-- HTML, CSS, JavaScript
+Runtime ports:
+- Frontend: 5173
+- Backend: 5000
+- AI engine: 8000
 
-## Project Structure
+---
 
-```text
-.
-├── .env
-├── backend
-│   ├── app.py
-│   ├── database.py
-│   ├── search_engine.py
-│   ├── users.db
-│   ├── datastructure
-│   │   ├── __init__.py
-│   │   ├── hashtable.py
-│   │   ├── linkedlist.py
-│   │   └── trie.py
-│   ├── ingestion
-│   │   └── pdfreader.py
-│   └── uploads
-│       └── admin_uploaded_files
-├── frontend
-│   ├── static
-│   │   ├── logo.png
-│   │   ├── script.js
-│   │   ├── style.css
-│   │   └── images
-│   │       ├── image.png
-│   │       ├── krmu logo.jpg
-│   │       └── profiles
-│   └── templates
-│       ├── _navbar.html
-│       ├── campus_map.html
-│       ├── faculty.html
-│       ├── index.html
-│       ├── login.html
-│       ├── notices.html
-│       ├── notifications.html
-│       ├── profile.html
-│       └── signup.html
-└── README.md
-```
+## 2) Prerequisites
 
-## Backend Overview
+Install these first:
+- Node.js 18+
+- Python 3.11+ (3.13 works in your current setup)
+- MySQL 8+
+- Windows PowerShell (for commands below)
 
-### `backend/app.py`
+---
 
-Main Flask application containing:
+## 3) Environment Setup
 
-- App setup and folder paths
-- Environment loading via `python-dotenv` (when installed)
-- Session and auth configuration
-- Search engine instance initialization
-- Sample in-memory data for faculty, notices, notifications, map route profiles
-- All web routes
-- File upload/delete and serving logic
-
-### `backend/database.py`
-
-SQLite helper module:
-
-- Initializes `users` table (with legacy column migration safeguards)
-- Add/get/delete users
-- Get user by email
-- Update user profile
-- Update user role
-
-Database file location:
-
-- `backend/users.db`
-
-### `backend/search_engine.py`
-
-Custom search engine implementation:
-
-- Tokenization + stopword filtering
-- Inverted index for term-to-doc mapping
-- Trie for autocomplete/prefix search
-- Ranking based on term frequency
-- Category inference from filenames
-- Document add/remove and index rebuild operations
-
-### Custom Data Structures
-
-- `backend/datastructure/hashtable.py`: custom hash table with resizing
-- `backend/datastructure/linkedlist.py`: linked list + posting entries
-- `backend/datastructure/trie.py`: trie for autocomplete
-
-### PDF Ingestion
-
-- `backend/ingestion/pdfreader.py`: safe PDF text extraction via `PyPDF2`
-
-## Frontend Overview
-
-### Templates
-
-- `index.html`: dashboard, upload UI, search form, grouped results, news/gallery sections
-- `campus_map.html`: map info + room route finder UI
-- `faculty.html`: searchable/filterable faculty cards
-- `notices.html`: pinned/latest notices with bookmark action
-- `notifications.html`: notifications list
-- `profile.html`: profile info + edit form + profile image upload
-- `login.html`: login form
-- `signup.html`: registration form
-- `_navbar.html`: shared top navigation and session state links
-
-### Static
-
-- `script.js` includes:
-  - autocomplete behavior
-  - simulated voice search and clear button support
-  - room route instruction generation based on block/floor
-  - search loading UI helpers
-  - upload form client-side validation hooks
-- `style.css`: shared layout and module styling
-
-## Routes
-
-| Route | Method | Description |
-|---|---|---|
-| `/` | GET | Dashboard (requires login) |
-| `/signup` | GET, POST | Register account |
-| `/login` | GET, POST | Login |
-| `/logout` | GET | Logout + clear session |
-| `/search` | GET | Search documents (keyword/prefix/filename/category) |
-| `/autocomplete` | GET | Trie-backed term suggestions |
-| `/upload` | POST | Admin-only file upload |
-| `/upload/delete` | POST | Admin-only delete file/folder |
-| `/campus-map` | GET | Campus map and route finder |
-| `/faculty` | GET | Faculty listing with filters |
-| `/notices` | GET | Notices page |
-| `/notifications` | GET | Notifications page (marks all as read) |
-| `/profile` | GET, POST | Profile view/update |
-| `/bookmark` | POST | Toggle bookmark item |
-| `/clear-history` | POST | Clear search history |
-| `/files/<path:filename>` | GET | Open/download allowed uploaded file |
-
-## Authentication and Sessions
-
-- Passwords are hashed with `werkzeug.security`
-- Session keys include user identity, role, profile info, bookmarks, and search history
-- Session cookie settings:
-  - `SESSION_COOKIE_HTTPONLY=True`
-  - `SESSION_COOKIE_SAMESITE="Lax"`
-  - `SESSION_COOKIE_SECURE=False` (set `True` in HTTPS production)
-- Permanent session lifetime: 7 days
-
-## Environment Variables
-
-Create `.env` in project root:
+### Root environment
+Create or update `.env` in the project root:
 
 ```env
-PORT=3000
-API_KEY=your_secret_key_here
-DATABASE_URL=mongodb://localhost:27017/myapp
-SECRET_KEY=change-this-secret-key-before-production
+PORT=5000
+JWT_SECRET=smart-campus-super-secret-key-change-me
+JWT_EXPIRES_IN=7d
+
+DB_HOST=localhost
+DB_PORT=3306
+DB_USER=smart_campus_user
+DB_PASSWORD=your_db_password
+DB_NAME=smart_campus_ai
+
+AI_ENGINE_BASE_URL=http://127.0.0.1:8000
+AI_ENGINE_TIMEOUT_MS=30000
 ```
 
-Notes:
+### AI engine environment
+Create or update `ai_engine/.env`:
 
-- `SECRET_KEY` is required for Flask session signing.
-- `PORT` controls server port (`5000` fallback if unset).
-- `API_KEY` and `DATABASE_URL` are currently present in `.env` but not consumed by backend logic yet.
+```env
+OPENAI_API_KEY=your_openai_api_key
+OPENAI_BASE_URL=
+OPENAI_CHAT_MODEL=gpt-4o-mini
+OPENAI_EMBEDDING_MODEL=text-embedding-3-small
 
-## Setup
+WEB_SEARCH_ENABLED=true
+WEB_SEARCH_PROVIDER=duckduckgo
+WEB_SEARCH_MAX_RESULTS=5
+WEB_SEARCH_TIMEOUT_MS=8000
+
+FEEDBACK_CONTEXT_LIMIT=10
+
+CHUNK_SIZE=800
+CHUNK_OVERLAP=120
+DEFAULT_TOP_K=4
+MIN_CONFIDENCE_THRESHOLD=0.55
+
+FAISS_INDEX_PATH=ai_engine/data/faiss.index
+FAISS_METADATA_PATH=ai_engine/data/faiss_metadata.json
+```
+
+Important:
+- If OPENAI_API_KEY is missing, the app can still work with local/web fallback, but GPT quality will be limited.
+- If OpenAI returns 429 insufficient_quota, enable billing/quota on your OpenAI account.
+
+---
+
+## 4) Install Dependencies
 
 From project root:
 
-1. Create virtual environment
-
-```bash
-python -m venv .venv
+```powershell
+npm install
 ```
 
-2. Activate virtual environment
-
-Windows PowerShell:
+For AI engine Python packages:
 
 ```powershell
-.\.venv\Scripts\Activate.ps1
+cd ai_engine
+C:\Users\LENOVO\AppData\Local\Programs\Python\Python313\python.exe -m pip install -r requirements.txt
+cd ..
 ```
 
-macOS/Linux:
+---
 
-```bash
-source .venv/bin/activate
+## 5) Database Setup
+
+Create database and apply schema:
+
+```sql
+CREATE DATABASE IF NOT EXISTS smart_campus_ai;
 ```
 
-3. Install dependencies
+Then run schema file from MySQL client:
 
-```bash
-pip install flask pypdf2 python-dotenv
+```powershell
+Get-Content .\backend\sql\schema.sql | mysql -u smart_campus_user -p smart_campus_ai
 ```
 
-4. Ensure `.env` exists (see above)
+---
 
-5. Run the app
+## 6) Run Application (All Services)
 
-```bash
-python backend/app.py
+Open three terminals.
+
+### Terminal A: Backend
+```powershell
+cd "c:\Users\LENOVO\Desktop\AI Chat Bot KRMU"
+npm run server
 ```
 
-## Access URLs
+### Terminal B: Frontend
+```powershell
+cd "c:\Users\LENOVO\Desktop\AI Chat Bot KRMU"
+npm run dev
+```
 
-With `PORT=3000`:
+### Terminal C: AI Engine
+```powershell
+cd "c:\Users\LENOVO\Desktop\AI Chat Bot KRMU\ai_engine"
+C:\Users\LENOVO\AppData\Local\Programs\Python\Python313\python.exe -m uvicorn app.main:app --host 127.0.0.1 --port 8000
+```
 
-- `http://127.0.0.1:3000`
-- `http://localhost:3000`
+Copy note:
+- Run only the two lines inside the code block above.
+- Do not copy markdown markers (```powershell / ```) or the health-check lines into terminal.
 
-If `PORT` is not set, default is `5000`.
+Health checks:
+- Backend: http://localhost:5000/api/health
+- AI engine: http://127.0.0.1:8000/health
+- Frontend: http://localhost:5173
 
-## File Upload Behavior
+---
 
-Backend upload allowlist supports:
+## 7) Phone Access
 
-- `pdf`, `txt`, `doc`, `docx`, `ppt`, `pptx`, `xls`, `xlsx`, `png`, `jpg`, `jpeg`, `webp`, `gif`
+Use your LAN IP (example: `10.18.28.59`) and ensure phone is on same Wi-Fi:
+- Frontend: http://10.18.28.59:5173
 
-Storage locations:
+If phone cannot access:
+1. Confirm backend/frontend are listening on 0.0.0.0
+2. Allow firewall inbound ports 5173, 5000, 8000 (run as Administrator)
 
-- Current admin uploads: `backend/uploads/admin_uploaded_files/`
-- Legacy fallback reads: `backend/uploads/`
+```powershell
+netsh advfirewall firewall add rule name="SmartCampusAI Frontend 5173" dir=in action=allow protocol=TCP localport=5173
+netsh advfirewall firewall add rule name="SmartCampusAI Backend 5000" dir=in action=allow protocol=TCP localport=5000
+netsh advfirewall firewall add rule name="SmartCampusAI AIEngine 8000" dir=in action=allow protocol=TCP localport=8000
+```
 
-## Search Behavior
+---
 
-- Indexed fields: title, filename, and document content
-- Query modes:
-  - keyword search
-  - prefix search via trie
-  - filename search (contains or prefix)
-- Category grouping in UI results
-- Autocomplete endpoint returns term frequency
+## 8) Admin and User Flow
 
-## Known Implementation Notes
+- Register users from Register page (student role by default).
+- Admins create additional admins from Admin Dashboard.
+- Admin uploads documents for indexing.
+- Users ask questions in chat.
+- Answers include source metadata and support feedback.
 
-- Indexed documents are in-memory at runtime; restart clears in-memory index until files are re-uploaded/re-indexed by custom logic.
-- `script.js` upload client-side validation currently allows `pdf` and `txt`, while backend accepts a broader set.
-- The static map panel is currently a placeholder; route guidance is text-based.
+---
 
-## Security Notes
+## 9) Feedback Loop
 
-- Keep `.env` private and do not commit real secrets.
-- Use a strong random `SECRET_KEY` in production.
-- Set `SESSION_COOKIE_SECURE=True` when serving over HTTPS.
+- Users can rate AI responses (1 to 5) and add comments.
+- Feedback is stored in MySQL `feedback` table.
+- Recent feedback context is injected into future AI prompts.
+
+---
+
+## 10) Answer Modes
+
+The AI can answer from:
+- Documents (RAG over uploaded files)
+- Web fallback (general questions)
+- GPT (if OPENAI_API_KEY and quota are available)
+
+If GPT quota is unavailable, the system gracefully falls back instead of crashing.
+
+---
+
+## 11) Common Issues
+
+### A) Document upload fails during embedding
+- Check AI engine health endpoint
+- Ensure AI engine is running
+- Ensure document contains extractable text
+- Verify OPENAI_API_KEY if GPT embeddings are needed
+
+### B) OPENAI_API_KEY missing
+- Add key in `ai_engine/.env`
+- Restart AI engine
+
+### C) OpenAI 429 insufficient_quota
+- Add billing or increase quota on OpenAI account
+- App will still work with fallback modes
+
+### D) Port already in use (WinError 10048)
+Kill process using the port:
+
+```powershell
+Get-NetTCPConnection -LocalPort 8000 -State Listen | Select-Object -ExpandProperty OwningProcess
+Stop-Process -Id <PID> -Force
+```
+
+### E) AI responses look irrelevant
+- Re-upload cleaner documents
+- Ask more specific campus questions
+- Ensure feedback is being submitted
+- Enable GPT mode for better synthesis
+
+---
+
+## 12) Build Frontend
+
+```powershell
+cd "c:\Users\LENOVO\Desktop\AI Chat Bot KRMU"
+npm run build
+```
+
+Output is generated in `dist/`.
+
+---
+
+## 13) Security Notes
+
+- Never commit real API keys to Git.
+- Rotate keys immediately if exposed.
+- Keep `.env` and `ai_engine/.env` private.
+
+---
+
+## 14) Quick Start (Copy/Paste)
+
+```powershell
+# 1) Backend
+cd "c:\Users\LENOVO\Desktop\AI Chat Bot KRMU"
+npm run server
+
+# 2) Frontend (new terminal)
+cd "c:\Users\LENOVO\Desktop\AI Chat Bot KRMU"
+npm run dev
+
+# 3) AI Engine (new terminal)
+cd "c:\Users\LENOVO\Desktop\AI Chat Bot KRMU\ai_engine"
+C:\Users\LENOVO\AppData\Local\Programs\Python\Python313\python.exe -m uvicorn app.main:app --host 127.0.0.1 --port 8000
+```
+
+Open: http://localhost:5173
