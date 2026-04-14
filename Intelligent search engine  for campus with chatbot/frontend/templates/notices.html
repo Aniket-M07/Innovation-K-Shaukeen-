@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Notices - Intelligent Campus Search Engine</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+    {% include '_navbar.html' %}
+
+    <div class="container">
+        <section class="card">
+            <h2>📣 Campus Notices</h2>
+            <form method="get" action="/notices" style="margin-bottom: 1rem; display: flex; gap: 0.5rem;">
+                <input type="text" name="q" placeholder="Search notices" value="{{ query }}" />
+                <button type="submit">Search</button>
+            </form>
+
+            {% if pinned %}
+            <div class="notice-section">
+                <h3>Pinned Notices</h3>
+            </div>
+            <div class="notice-grid">
+                {% for n in pinned %}
+                <div class="notice-card pinned">
+                    <h4>{{ n.title }}</h4>
+                    <p>{{ n.content }}</p>
+                    <span class="badge">{{ n.category }}</span>
+                    <form method="post" action="/bookmark">
+                        <input type="hidden" name="title" value="{{ n.title }}" />
+                        <input type="hidden" name="type" value="notice" />
+                        <button type="submit">Bookmark</button>
+                    </form>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <div class="notice-section">
+                <h3>Latest Notices</h3>
+            </div>
+            <div class="notice-grid">
+                {% for n in latest %}
+                <div class="notice-card">
+                    <h4>{{ n.title }}</h4>
+                    <p>{{ n.content }}</p>
+                    <span class="badge">{{ n.category }}</span>
+                    <form method="post" action="/bookmark">
+                        <input type="hidden" name="title" value="{{ n.title }}" />
+                        <input type="hidden" name="type" value="notice" />
+                        <button type="submit">Bookmark</button>
+                    </form>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+    </div>
+</body>
+
+</html>
